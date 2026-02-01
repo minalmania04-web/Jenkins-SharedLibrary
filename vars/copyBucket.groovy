@@ -1,4 +1,4 @@
-def Transfer_bucket_Content() {
+def call() {
     sh '''
        echo "hello this is buckets scaning"
         BUCKETS_NAME=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
