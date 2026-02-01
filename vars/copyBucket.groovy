@@ -1,17 +1,18 @@
 def call() {
      sh '''
-        set -euo pipefail
+        echo "Listing all buckets..."
+    BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
 
-        echo "Scanning all buckets..."
-        BUCKETS_NAME=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
+    for BUCKET in $BUCKETS; do
+        echo "Deleting contents of bucket: $BUCKET"
+        # Supprimer tout le contenu
+        aws s3 rm "s3://$BUCKET" --recursive
 
-        for BUCKET_NAME in $BUCKETS_NAME; do
-            # ne traiter que les buckets qui se terminent par '-kitty'
-            if [[ "$BUCKET_NAME" == *"-kitty" ]]; then
-                DEST_BUCKET="${BUCKET_NAME}-new"
-                echo "Copying content from $BUCKET_NAME to $DEST_BUCKET"
-                aws s3 cp "s3://$BUCKET_NAME/" "s3://$DEST_BUCKET/" --recursive --quiet
-            fi
-        done
+        echo "Deleting bucket: $BUCKET"
+        # Supprimer le bucket
+        aws s3api delete-bucket --bucket "$BUCKET"
+    done
+
+    echo "All buckets have been deleted."
     '''
 }
