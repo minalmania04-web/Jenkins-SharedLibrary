@@ -7,7 +7,7 @@ def call() {
         echo "this is bucket copy"
             aws s3 cp \
               "s3://$BUCKET_NAME/" \
-              "s3://$BUCKET_NAME_NEW/" \
+              "s3://${BUCKET_NAME}-NEW" \
               --recursive \
               --quiet
         done
