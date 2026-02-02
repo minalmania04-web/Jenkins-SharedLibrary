@@ -1,18 +1,29 @@
-def call() {
-     sh '''
-        echo "Listing all buckets..."
-    BUCKETS=$(aws s3api list-buckets --query "Buckets[].Name" --output text)
+def call(Map config = [:]) 
+{
+   if(config.envName != "dev")
+     {
+          error "this is not dev env"
+     }
+    if(!config.sourceBucket)
+     {
+          error "source bucket empty"
+     }
+     if(!config.targetBucket)
+     {
+          error "target bucket empty"
+     }
+def sourceBucket = config.sourceBucket
+def targetBucket = config.targetBucket
 
-    for BUCKET in $BUCKETS; do
-        echo "Deleting contents of bucket: $BUCKET"
-        # Supprimer tout le contenu
-        aws s3 rm "s3://$BUCKET" --recursive
+     checkBucketExistence(sourceBucket)
+     checkBucketExistence(targetBucket)
+     
+     echo "this step will copy the content of ${sourceBucket} to the target ${targetBucket}
 
-        echo "Deleting bucket: $BUCKET"
-        # Supprimer le bucket
-        aws s3api delete-bucket --bucket "$BUCKET"
-    done
-
-    echo "All buckets have been deleted."
-    '''
+     sh """
+      set -e 
+      aws s3 cp s3://${sourceBucket}  s3://${targetBucket} --recursive
+     """
+     
+     
 }
