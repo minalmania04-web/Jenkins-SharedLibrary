@@ -19,7 +19,7 @@ def targetBucket = config.targetBucket
      checkBucketExistence(sourceBucket)
      checkBucketExistence(targetBucket)
      
-     echo "this step will copy the content of ${sourceBucket} to the target ${targetBucket}
+     echo "this step will copy the content of ${sourceBucket} to the target ${targetBucket}"
 
      sh """
       set -e 
