@@ -12,6 +12,7 @@ def call(Map config = [:])
      {
           error "target bucket empty"
      }
+   echo " input no empty"
 def sourceBucket = config.sourceBucket
 def targetBucket = config.targetBucket
 
