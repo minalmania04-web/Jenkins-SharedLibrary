@@ -5,10 +5,17 @@ def call(String sourceBucket, String targetBucket, enviroment = "dev") {
         target: targetBucket,
         envName: enviroment // Ajouté pour correspondre à l'utilisation dans validateInput
     ]
-
+stage('Validate then Inputs')
+    {
     validateInput(config)
+    }
+stage('Detecting the environement')
+    {
     defineEnvironement(enviroment)
-    checkBucketExistence(config.source)
+    }
+stage('checking the existance of the buckets')
+    { checkBucketExistence(config.source)
+    }
     checkBucketExistence(config.target)
     s3copy(config.source, config.target)
 }
