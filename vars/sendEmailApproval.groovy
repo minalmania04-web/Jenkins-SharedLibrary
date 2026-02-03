@@ -1,4 +1,5 @@
 def call(String buildTag, Boolean isApproved = false) {
+    echo "this is the senEmail Step , this the buildTag , ${buildTag}"
     def status_value = (isApproved) ? 'has been approved' : 'need your approval'
     def subject = "[Jenkins] ${buildTag} ${status_value}"
 
