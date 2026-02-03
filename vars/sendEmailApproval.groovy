@@ -1,0 +1,12 @@
+def call(String buildTag, Boolean isApproved = false) {
+    def status_value = (isApproved) ? 'has been approved' : 'need your approval'
+    def subject = "[Jenkins] ${buildTag} ${status_value}"
+
+    emailext(
+        body: (isApproved) ? "\${SCRIPT, template=\"managed:build_tag_approved\"}" : "Please check the build ${buildTag}",
+        mimeType: 'text/html',
+        subject: subject.replaceAll('%2F', '/'),
+        to: "dl-myad-teamplatform",
+        attachLog: false
+    )
+}
