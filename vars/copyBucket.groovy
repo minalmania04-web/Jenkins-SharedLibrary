@@ -60,9 +60,6 @@ def defineEnvironement(enviroment) {
 }
 
 def validateInput(Map config) {
-    if (config.envName != "dev") {
-        error "dev enviroment is required, note that val, stg and prod is forbidden for this action"
-    }
     if (!config.source) {
         error "this input is empty, Source Bucket is required"
     }
