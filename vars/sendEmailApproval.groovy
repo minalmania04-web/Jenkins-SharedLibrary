@@ -6,7 +6,7 @@ def call(String buildTag, Boolean isApproved = false) {
         body: (isApproved) ? "\${SCRIPT, template=\"managed:build_tag_approved\"}" : "Please check the build ${buildTag}",
         mimeType: 'text/html',
         subject: subject.replaceAll('%2F', '/'),
-        to: "dl-myad-teamplatform",
+        to: "mina.lmania04@gmail.com",
         attachLog: false
     )
 }
