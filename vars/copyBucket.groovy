@@ -26,7 +26,7 @@ def s3copy(Map config) {
     String op = "ls cp"
     String process = "copy"
     echo "${config.purge.enabled}"
-    if(!config.purge.enabled)
+    if(config.purge.enabled)
     {
         op = "s3api sync"
         process = "sync"
@@ -34,7 +34,7 @@ def s3copy(Map config) {
     echo "***** This step will do a ${process} of the content from the **** : ${config.source}"
     
     def confirmation = input(
-        id: "confirm ${process}",
+        id: "confirm-${process}",
         message: "ATTENTION, Are you sure you want to ${process} the content of s3://${config.source} to s3://${config.target}?",
         parameters: [
             string(name: 'CONFIRM', description: 'Enter YES to continue', defaultValue: '')
