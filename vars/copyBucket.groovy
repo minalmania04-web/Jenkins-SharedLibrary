@@ -7,9 +7,9 @@ def call(Map params) {
             enabled:false,
             ]        
     ]
-    config.source.putAll(params.source? : [:])
-    config.target.putAll(params.target? : [:])
-    config.purge.putAll(params.purge? : [:])
+    config.source.putAll(params.source ?: [:])
+    config.target.putAll(params.target ?: [:])
+    config.purge.putAll(params.purge ?: [:])
 stage('Validate then Inputs')
     {
     validateInput(config)
