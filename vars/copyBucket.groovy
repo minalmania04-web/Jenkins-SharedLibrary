@@ -71,8 +71,8 @@ def detectingenviroment()
 }
 def emailApprouvmentenv(Map config) {
     def bucket_env= sh( 
-        script : " aws s3api get-bucket-tagging --bucket ${target.bucket} --query 'TargSet[?Key=='environment'].Value' --output text"
-        returnStdout: true  )
+        script : " aws s3api get-bucket-tagging --bucket ${config.target} --query 'TargSet[?Key=='environment'].Value' --output text",
+        returnStdout: true  ).trim()
     echo " ${bucket_env}"
     if(bucket_env == 'prod' || bucket_env == 'learn')    
     {
