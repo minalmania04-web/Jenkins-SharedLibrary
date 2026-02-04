@@ -1,5 +1,5 @@
 
-def call(String sourceBucket, String targetBucket,environment) {
+def call(String sourceBucket, String targetBucket) {
     def config = [
         source: sourceBucket,
         target: targetBucket,
@@ -53,7 +53,7 @@ def s3copy(String sourceBucket, String targetBucket) {
 }
 
 def defineEnvironement(enviroment) {
-    if (enviroment == "prod" || enviroment == "learn" || enviroment == "val") {
+    if (params.enviroment == "prod" || params.enviroment == "learn" || params.enviroment == "val") {
         sendEmailApproval(env.BUILD_TAG)
         timeout(time: 1, unit: 'DAYS') {
             input message: 'The build need an approval to continue. Do you want to approve this?',
