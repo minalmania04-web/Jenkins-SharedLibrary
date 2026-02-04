@@ -3,7 +3,7 @@ def call(String sourceBucket, String targetBucket) {
     def config = [
         source: sourceBucket,
         target: targetBucket,
-        envName: enviroment // Ajouté pour correspondre à l'utilisation dans validateInput
+        
     ]
 stage('Validate then Inputs')
     {
@@ -11,7 +11,7 @@ stage('Validate then Inputs')
     }
 stage('Detecting the environement')
     {
-    EmailApprouvment(enviroment)
+    emailApprouvmentenv()
     }
 stage('checking the existance of the buckets')
     { checkBucketExistence(config.source)
@@ -57,7 +57,7 @@ def detectingenviroment()
     { return params.enviroment
     }
 }
-def EmailApprouvment() {
+def emailApprouvmentenv() {
     String Actualenviroment = detectingenviroment()
     if (Actualenviroment == "prod" || Actualenviroment == "learn" || Actualenviroment == "val") {
         sendEmailApproval(env.BUILD_TAG)
