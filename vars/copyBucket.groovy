@@ -25,11 +25,13 @@ stage('checking the existance of the buckets')
 def s3copy(Map config) {
     String op = "s3 cp"
     String process = "copy"
+    String recursive = "--recursive"
     echo "${config.purge.enabled}"
     if(config.purge.enabled)
     {
         op = "s3 sync"
         process = "sync"
+        recursive =""
     }
     echo "***** This step will do a ${process} of the content from the **** : ${config.source}"
     
@@ -54,7 +56,7 @@ def s3copy(Map config) {
         aws s3 ls s3://${config.target} --recursive --human-readable --summarize
         
         echo "launch the copy process"
-        aws ${op} s3://${config.source} s3://${config.target} --recursive
+        aws ${op} s3://${config.source} s3://${config.target} ${recursive}
         
         echo "Copy process is done, please check the new content of your bucket down below"
         echo "New Content of target bucket : (${config.target}) :"
