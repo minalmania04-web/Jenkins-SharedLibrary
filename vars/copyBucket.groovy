@@ -28,7 +28,7 @@ def s3copy(Map config) {
     echo "${config.purge.enabled}"
     if(config.purge.enabled)
     {
-        op = "s3api sync"
+        op = "s3 sync"
         process = "sync"
     }
     echo "***** This step will do a ${process} of the content from the **** : ${config.source}"
