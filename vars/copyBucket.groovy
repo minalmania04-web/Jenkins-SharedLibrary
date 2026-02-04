@@ -70,11 +70,11 @@ def detectingenviroment()
     }
 }
 def emailApprouvmentenv(Map config) {
-    def tag-value = sh( 
+    def bucket_env= sh( 
         script : " aws s3api get-bucket-tagging --bucket ${target.bucket} --query 'TargSet[?Key=='environment'].Value' --output text"
         returnStdout: true  )
-    echo " ${tag-value}"
-    if(tag-value == 'prod' || tag-value == 'learn')    
+    echo " ${bucket_env}"
+    if(bucket_env == 'prod' || bucket_env == 'learn')    
     {
         sendEmailApproval(env.BUILD_TAG)
         timeout(time: 1, unit: 'DAYS') {
