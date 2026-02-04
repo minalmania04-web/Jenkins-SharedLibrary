@@ -91,7 +91,7 @@ def validateInput(Map config) {
 }
 
 def checkBucketExistence(Map config) {
-    echo "Verify the existence of : ${bucketName}"
+    echo "Verify the existence of : ${config.target}"
     
     def status = sh(
         script: "aws s3api head-bucket --bucket ${config.target}",
