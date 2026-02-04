@@ -1,5 +1,5 @@
 
-def call(String sourceBucket, String targetBucket, enviroment = "dev") {
+def call(String sourceBucket, String targetBucket,environment) {
     def config = [
         source: sourceBucket,
         target: targetBucket,
