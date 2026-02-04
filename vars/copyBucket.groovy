@@ -7,7 +7,12 @@ def call(Map params) {
             enabled: params.purge?.enabled ?: false
         ]
     ]
-stage('Validate then Inputs')
+    stagesexec(config)
+
+}
+def stagesexec(Map config)
+{
+    stage('Validate then Inputs')
     {
     validateInput(config)
     }
@@ -18,8 +23,9 @@ stage('Detecting the environement')
 stage('checking the existance of the buckets')
     { checkBucketExistence(config)
     }
-    checkBucketExistence(config)
-    s3copy(config)
+stage('content migration')
+    { s3copy(config)
+    }
 }
 
 def s3copy(Map config) {
