@@ -1,15 +1,12 @@
 
 def call(Map params) {
     def config = [
-        source: " ",
-        target: " ",
-        purge:[
-            enabled:false,
-            ]        
+        source : params.source ?: "",
+        target : params.target ?: "",
+        purge  : [
+            enabled: params.purge?.enabled ?: false
+        ]
     ]
-    config.source.putAll(params.source ?: [:])
-    config.target.putAll(params.target ?: [:])
-    config.purge.enabled.putAll(params.purge ?: [:])
 stage('Validate then Inputs')
     {
     validateInput(config)
