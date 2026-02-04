@@ -53,7 +53,7 @@ def s3copy(String sourceBucket, String targetBucket) {
 }
 def detectingenviroment()
 {
-    if(binding.hasVariable('params') && params?.enviroment)
+    if(params.enviroment)
     { return params.enviroment
     }
 }
