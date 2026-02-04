@@ -1,9 +1,11 @@
 
-def call(String sourceBucket, String targetBucket) {
+def call(String sourceBucket, String targetBucket , Boolean purge) {
     def config = [
         source: sourceBucket,
         target: targetBucket,
-        
+        purge:[
+            enabled:false,
+            ]        
     ]
 stage('Validate then Inputs')
     {
@@ -20,12 +22,19 @@ stage('checking the existance of the buckets')
     s3copy(config.source, config.target)
 }
 
-def s3copy(String sourceBucket, String targetBucket) {
-    echo "***** This step will do a copy of the content from the **** : ${sourceBucket}"
+def s3copy(String sourceBucket, String targetBucket , Boolean purge) {
+    String op = "ls cp"
+    String process = "copy"
+    if(!config.purge.enabled)
+    {
+        op = "s3api sync"
+        process = "sync"
+    }
+    echo "***** This step will do a ${process} of the content from the **** : ${sourceBucket}"
     
     def confirmation = input(
-        id: 'confirmCopy',
-        message: "ATTENTION, Are you sure you want to copy the content of s3://${sourceBucket} to s3://${targetBucket}?",
+        id: "confirm ${process}",
+        message: "ATTENTION, Are you sure you want to ${process}the content of s3://${sourceBucket} to s3://${targetBucket}?",
         parameters: [
             string(name: 'CONFIRM', description: 'Enter YES to continue', defaultValue: '')
         ]
@@ -44,7 +53,7 @@ def s3copy(String sourceBucket, String targetBucket) {
         aws s3 ls s3://${targetBucket} --recursive --human-readable --summarize
         
         echo "launch the copy process"
-        aws s3 cp s3://${sourceBucket} s3://${targetBucket} --recursive
+        aws ${op} s3://${sourceBucket} s3://${targetBucket} --recursive
         
         echo "Copy process is done, please check the new content of your bucket down below"
         echo "New Content of target bucket : (${targetBucket}) :"
