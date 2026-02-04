@@ -9,7 +9,7 @@ def call(Map params) {
     ]
     config.source.putAll(params.source ?: [:])
     config.target.putAll(params.target ?: [:])
-    config.purge.putAll(params.purge ?: [:])
+    config.purge.enabled.putAll(params.purge ?: [:])
 stage('Validate then Inputs')
     {
     validateInput(config)
@@ -19,13 +19,13 @@ stage('Detecting the environement')
     emailApprouvmentenv()
     }
 stage('checking the existance of the buckets')
-    { checkBucketExistence(config.source)
+    { checkBucketExistence(config)
     }
-    checkBucketExistence(config.target)
-    s3copy(config.source, config.target, config.purge)
+    checkBucketExistence(config)
+    s3copy(config)
 }
 
-def s3copy(String sourceBucket, String targetBucket , Boolean purge) {
+def s3copy(Map config) {
     String op = "ls cp"
     String process = "copy"
     if(!config.purge.enabled)
@@ -33,11 +33,11 @@ def s3copy(String sourceBucket, String targetBucket , Boolean purge) {
         op = "s3api sync"
         process = "sync"
     }
-    echo "***** This step will do a ${process} of the content from the **** : ${sourceBucket}"
+    echo "***** This step will do a ${process} of the content from the **** : ${config.source}"
     
     def confirmation = input(
         id: "confirm ${process}",
-        message: "ATTENTION, Are you sure you want to ${process}the content of s3://${sourceBucket} to s3://${targetBucket}?",
+        message: "ATTENTION, Are you sure you want to ${process}the content of s3://${config.source} to s3://${config.target}?",
         parameters: [
             string(name: 'CONFIRM', description: 'Enter YES to continue', defaultValue: '')
         ]
@@ -49,18 +49,18 @@ def s3copy(String sourceBucket, String targetBucket , Boolean purge) {
 
     sh """
         set -e
-        echo "Content of Source bucket : (${sourceBucket}) :"
-        aws s3 ls s3://${sourceBucket} --recursive --human-readable --summarize
+        echo "Content of Source bucket : (${config.source}) :"
+        aws s3 ls s3://${config.source} --recursive --human-readable --summarize
         
-        echo "Content of target bucket (${targetBucket}) :"
-        aws s3 ls s3://${targetBucket} --recursive --human-readable --summarize
+        echo "Content of target bucket (${config.target}) :"
+        aws s3 ls s3://${config.target} --recursive --human-readable --summarize
         
         echo "launch the copy process"
-        aws ${op} s3://${sourceBucket} s3://${targetBucket} --recursive
+        aws ${op} s3://${config.source} s3://${config.target} --recursive
         
         echo "Copy process is done, please check the new content of your bucket down below"
-        echo "New Content of target bucket : (${targetBucket}) :"
-        aws s3 ls s3://${targetBucket} --recursive --human-readable --summarize
+        echo "New Content of target bucket : (${config.target}) :"
+        aws s3 ls s3://${config.source} --recursive --human-readable --summarize
     """
 }
 def detectingenviroment()
@@ -93,17 +93,17 @@ def validateInput(Map config) {
     }
 }
 
-def checkBucketExistence(String bucketName) {
+def checkBucketExistence(Map config) {
     echo "Verify the existence of : ${bucketName}"
     
     def status = sh(
-        script: "aws s3api head-bucket --bucket ${bucketName}",
+        script: "aws s3api head-bucket --bucket ${config.target}",
         returnStatus: true
     )
 
     if (status == 0) {
-        echo "OK : Bucket '${bucketName}' existe."
+        echo "OK : Bucket '${config.target}' existe."
     } else {
-        error "ERREUR : Bucket '${bucketName}' doesn't existe or not accessible."
+        error "ERREUR : Bucket '${config.target}' doesn't existe or not accessible."
     }
 }
