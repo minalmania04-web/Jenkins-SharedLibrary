@@ -13,7 +13,7 @@ stage('Validate then Inputs')
     }
 stage('Detecting the environement')
     {
-    emailApprouvmentenv()
+    emailApprouvmentenv(config)
     }
 stage('checking the existance of the buckets')
     { checkBucketExistence(config)
