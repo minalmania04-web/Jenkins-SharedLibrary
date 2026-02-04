@@ -69,9 +69,13 @@ def detectingenviroment()
     { return params.enviroment
     }
 }
-def emailApprouvmentenv() {
-    String Actualenviroment = detectingenviroment()
-    if (Actualenviroment == "prod" || Actualenviroment == "learn" || Actualenviroment == "val") {
+def emailApprouvmentenv(Map config) {
+    def tag-value = sh( 
+        script : " aws s3api get-bucket-tagging --bucket ${target.bucket} --query 'TargSet[?Key=='environment'].Value' --output text"
+        returnStdout: true  )
+    echo " ${tag-value}"
+    if(tag-value == 'prod' || tag-value == 'learn')    
+    {
         sendEmailApproval(env.BUILD_TAG)
         timeout(time: 1, unit: 'DAYS') {
             input message: 'The build need an approval to continue. Do you want to approve this?',
