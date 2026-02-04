@@ -1,12 +1,15 @@
 
-def call(String sourceBucket, String targetBucket , Boolean purge) {
+def call(Map params) {
     def config = [
-        source: sourceBucket,
-        target: targetBucket,
+        source: " ",
+        target: " ",
         purge:[
             enabled:false,
             ]        
     ]
+    config.source.putAll(params.source? : [:])
+    config.target.putAll(params.target? : [:])
+    config.purge.putAll(params.purge? : [:])
 stage('Validate then Inputs')
     {
     validateInput(config)
@@ -19,7 +22,7 @@ stage('checking the existance of the buckets')
     { checkBucketExistence(config.source)
     }
     checkBucketExistence(config.target)
-    s3copy(config.source, config.target)
+    s3copy(config.source, config.target, config.purge)
 }
 
 def s3copy(String sourceBucket, String targetBucket , Boolean purge) {
