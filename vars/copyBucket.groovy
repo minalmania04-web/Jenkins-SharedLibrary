@@ -11,7 +11,7 @@ stage('Validate then Inputs')
     }
 stage('Detecting the environement')
     {
-    defineEnvironement(enviroment)
+    EmailApprouvment(enviroment)
     }
 stage('checking the existance of the buckets')
     { checkBucketExistence(config.source)
@@ -51,9 +51,15 @@ def s3copy(String sourceBucket, String targetBucket) {
         aws s3 ls s3://${targetBucket} --recursive --human-readable --summarize
     """
 }
-
-def defineEnvironement(enviroment) {
-    if (params.enviroment == "prod" || params.enviroment == "learn" || params.enviroment == "val") {
+def detectingenviroment()
+{
+    if(binding.hasVariable('params') && params?.enviroment)
+    { return params.enviroment
+    }
+}
+def EmailApprouvment() {
+    String Actualenviroment = detectingenviroment()
+    if (Actualenviroment == "prod" || Actualenviroment == "learn" || Actualenviroment == "val") {
         sendEmailApproval(env.BUILD_TAG)
         timeout(time: 1, unit: 'DAYS') {
             input message: 'The build need an approval to continue. Do you want to approve this?',
