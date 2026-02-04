@@ -25,7 +25,7 @@ stage('checking the existance of the buckets')
 def s3copy(Map config) {
     String op = "ls cp"
     String process = "copy"
-    echo "${config.purge.enabled}
+    echo "${config.purge.enabled}"
     if(!config.purge.enabled)
     {
         op = "s3api sync"
