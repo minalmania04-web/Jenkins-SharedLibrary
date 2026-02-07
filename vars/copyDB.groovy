@@ -42,8 +42,9 @@ def validateInput(Map config) {
 }
 
 def checkDBExistence(String tableName) {
+    def dbregion = "eu-west-1"
     def status = sh(
-        script: "aws dynamodb describe-table --table-name ${tableName}",
+        script: "aws dynamodb describe-table --table-name ${tableName} --region ${dbregion}",
         returnStatus: true
     )
 
