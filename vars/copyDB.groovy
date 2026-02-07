@@ -87,7 +87,7 @@ def dbcopy(Map config) {
 def do_copy(Map config) {
      def dbregion = "eu-west-1"
     if (config.mode_copy == "scan") {
-        def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion)"
+        def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion}"
         read_write(scanCmd, config)
     }
 
@@ -95,7 +95,7 @@ def do_copy(Map config) {
         if (!config.'expression-condition') {
             error "key-condition-expression is required for this operation"
         }
-        def queryCmd = "aws dynamodb query --table-name ${config.source} --key-condition-expression \"${config.'expression-condition'}\" --output json --region ${dbregion)"
+        def queryCmd = "aws dynamodb query --table-name ${config.source} --key-condition-expression \"${config.'expression-condition'}\" --output json --region ${dbregion}"
         read_write(queryCmd, config)
     }
 }
@@ -128,7 +128,7 @@ def read_write(String dbCmd, Map config) {
                 sh """
                     echo '${queryResultRaw}' | jq '.Items[${NB}:${NB + batch_size}]' > query_result.json
                     jq '{"${config.target}": [.[] | {PutRequest: {Item: .}} ]}' query_result.json > batch_write.json
-                    aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion)
+                    aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion}
                 """
             }
         }
