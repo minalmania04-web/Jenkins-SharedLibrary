@@ -57,10 +57,11 @@ def checkDBExistence(String tableName) {
 }
 
 def defineEnvironment(Map config) {
+    def dbregion = "eu-west-1"
     def db_env = sh(
         script: """
-            TABLE_ARN=\$(aws dynamodb describe-table --table-name ${config.source} --query Table.TableArn --output text)
-            aws dynamodb list-tags-of-resource --resource-arn \$TABLE_ARN --query "Tags[?Key=='env'].Value" --output text
+            TABLE_ARN=\$(aws dynamodb describe-table --table-name ${config.source} --query Table.TableArn --output text --region ${dbregion)}
+            aws dynamodb list-tags-of-resource --resource-arn \$TABLE_ARN --query "Tags[?Key=='env'].Value" --output text --region ${dbregion)
         """,
         returnStdout: true
     ).trim()
@@ -84,8 +85,9 @@ def dbcopy(Map config) {
 }
 
 def do_copy(Map config) {
+     def dbregion = "eu-west-1"
     if (config.mode_copy == "scan") {
-        def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json"
+        def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion)"
         read_write(scanCmd, config)
     }
 
@@ -93,12 +95,13 @@ def do_copy(Map config) {
         if (!config.'expression-condition') {
             error "key-condition-expression is required for this operation"
         }
-        def queryCmd = "aws dynamodb query --table-name ${config.source} --key-condition-expression \"${config.'expression-condition'}\" --output json"
+        def queryCmd = "aws dynamodb query --table-name ${config.source} --key-condition-expression \"${config.'expression-condition'}\" --output json --region ${dbregion)"
         read_write(queryCmd, config)
     }
 }
 
 def read_write(String dbCmd, Map config) {
+   def dbregion = "eu-west-1"
     def lastKey = ""
     def isFinished = false
 
@@ -125,7 +128,7 @@ def read_write(String dbCmd, Map config) {
                 sh """
                     echo '${queryResultRaw}' | jq '.Items[${NB}:${NB + batch_size}]' > query_result.json
                     jq '{"${config.target}": [.[] | {PutRequest: {Item: .}} ]}' query_result.json > batch_write.json
-                    aws dynamodb batch-write-item --request-items file://batch_write.json
+                    aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion)
                 """
             }
         }
