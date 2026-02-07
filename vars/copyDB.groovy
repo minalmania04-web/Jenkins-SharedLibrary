@@ -101,8 +101,11 @@ def do_copy(Map config) {
     }
 }
 
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+
 def read_write(String dbCmd, Map config) {
-   def dbregion = "eu-west-1"
+    def dbregion = "eu-west-1"
     def lastKey = ""
     def isFinished = false
 
@@ -112,27 +115,45 @@ def read_write(String dbCmd, Map config) {
             queryCmd += " --exclusive-start-key '${lastKey}'"
         }
 
+        // On récupère le résultat brut (String)
         def queryResultRaw = sh(script: queryCmd, returnStdout: true).trim()
-       def queryJson = new JsonSlurper().parseText(queryResultRaw)
-
-
-        if (queryJson.LastEvaluatedKey) {
-            lastKey = groovy.json.JsonOutput.toJson(queryJson.LastEvaluatedKey)
-        } else {
-            isFinished = true
-        }
-
-        def count = queryJson.Items.size()
+        
+        // On utilise une fonction @NonCPS pour traiter le JSON sans bloquer Jenkins
+        def data = parseDynamoResponse(queryResultRaw)
+        
+        lastKey = data.nextKey
+        isFinished = data.done
+        def count = data.itemCount
         def batch_size = 25
 
         if (count > 0) {
+            // Utilisation de writeFile pour éviter les problèmes d'escape de caractères dans le shell
+            writeFile file: 'raw_data.json', text: queryResultRaw
+            
             for (int NB = 0; NB < count; NB += batch_size) {
                 sh """
-                    echo '${queryResultRaw}' | jq '.Items[${NB}:${NB + batch_size}]' > query_result.json
+                    jq '.Items[${NB}:${NB + batch_size}]' raw_data.json > query_result.json
                     jq '{"${config.target}": [.[] | {PutRequest: {Item: .}} ]}' query_result.json > batch_write.json
                     aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion}
                 """
             }
+            
+            sh "rm -f raw_data.json query_result.json batch_write.json"
         }
     }
+}
+
+/**
+ * L'annotation @NonCPS permet d'utiliser des objets non-sérialisables 
+ * (comme ceux de JsonSlurper) car Jenkins ne tentera pas de sauvegarder 
+ * l'état au milieu de cette fonction.
+ */
+@NonCPS
+def parseDynamoResponse(String rawJson) {
+    def json = new JsonSlurper().parseText(rawJson)
+    return [
+        itemCount: json.Items ? json.Items.size() : 0,
+        done: json.LastEvaluatedKey == null,
+        nextKey: json.LastEvaluatedKey ? JsonOutput.toJson(json.LastEvaluatedKey) : ""
+    ]
 }
