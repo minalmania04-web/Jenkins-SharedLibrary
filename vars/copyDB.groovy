@@ -60,8 +60,8 @@ def defineEnvironment(Map config) {
     def dbregion = "eu-west-1"
     def db_env = sh(
         script: """
-            TABLE_ARN=\$(aws dynamodb describe-table --table-name ${config.source} --query Table.TableArn --output text --region ${dbregion)}
-            aws dynamodb list-tags-of-resource --resource-arn \$TABLE_ARN --query "Tags[?Key=='env'].Value" --output text --region ${dbregion)
+            TABLE_ARN=\$(aws dynamodb describe-table --table-name ${config.source} --query Table.TableArn --region ${dbregion) --output text }
+            aws dynamodb list-tags-of-resource --resource-arn \$TABLE_ARN --query "Tags[?Key=='env'].Value" --output text 
         """,
         returnStdout: true
     ).trim()
