@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 def call(Map params = [:]) {
     def config = [
         source: params.source ?: "",
@@ -112,7 +113,8 @@ def read_write(String dbCmd, Map config) {
         }
 
         def queryResultRaw = sh(script: queryCmd, returnStdout: true).trim()
-        def queryJson = readJSON text: queryResultRaw
+       def queryJson = new JsonSlurper().parseText(queryResultRaw)
+
 
         if (queryJson.LastEvaluatedKey) {
             lastKey = groovy.json.JsonOutput.toJson(queryJson.LastEvaluatedKey)
