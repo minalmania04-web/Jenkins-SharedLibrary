@@ -115,33 +115,60 @@ def read_write(String dbCmd, Map config) {
             queryCmd += " --exclusive-start-key '${lastKey}'"
         }
 
-        // On récupère le résultat brut (String)
         def queryResultRaw = sh(script: queryCmd, returnStdout: true).trim()
-        
-        // On utilise une fonction @NonCPS pour traiter le JSON sans bloquer Jenkins
         def data = parseDynamoResponse(queryResultRaw)
-        
+
         lastKey = data.nextKey
         isFinished = data.done
         def count = data.itemCount
         def batch_size = 25
 
         if (count > 0) {
-            // Utilisation de writeFile pour éviter les problèmes d'escape de caractères dans le shell
             writeFile file: 'raw_data.json', text: queryResultRaw
-            
+
             for (int NB = 0; NB < count; NB += batch_size) {
                 sh """
+                    set -euo pipefail
+
                     jq '.Items[${NB}:${NB + batch_size}]' raw_data.json > query_result.json
                     jq '{"${config.target}": [.[] | {PutRequest: {Item: .}} ]}' query_result.json > batch_write.json
-                    aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion}
+
+                    RESPONSE=\$(aws dynamodb batch-write-item \
+                      --request-items file://batch_write.json \
+                      --region ${dbregion})
+
+                    RETRY_COUNT=0
+                    MAX_RETRIES=3
+
+                    while [ "\$(echo "\$RESPONSE" | jq '.UnprocessedItems | length')" -gt 0 ] \
+                          && [ "\$RETRY_COUNT" -lt "\$MAX_RETRIES" ]; do
+
+                        echo "Tentative de rattrapage n°\$((RETRY_COUNT + 1))..."
+
+                        echo "\$RESPONSE" | jq '.UnprocessedItems' > retry_batch.json
+
+                        sleep \$((2 ** RETRY_COUNT))
+
+                        RESPONSE=\$(aws dynamodb batch-write-item \
+                          --request-items file://retry_batch.json \
+                          --region ${dbregion})
+
+                        RETRY_COUNT=\$((RETRY_COUNT + 1))
+                    done
+
+                    if [ "\$(echo "\$RESPONSE" | jq '.UnprocessedItems | length')" -gt 0 ]; then
+                        echo "ERREUR : certains items n'ont pas pu être insérés après \$MAX_RETRIES tentatives."
+                        exit 1
+                    fi
                 """
             }
-            
-            sh "rm -f raw_data.json query_result.json batch_write.json"
+
+            sh "rm -f raw_data.json query_result.json batch_write.json retry_batch.json"
         }
     }
 }
+
+
 
 /**
  * L'annotation @NonCPS permet d'utiliser des objets non-sérialisables 
