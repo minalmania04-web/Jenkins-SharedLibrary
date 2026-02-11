@@ -4,6 +4,7 @@ def call(Map params = [:]) {
         source: params.source ?: "",
         target: params.target ?: "",
         mode_copy: params.mode_copy ?: "scan",
+        filetarget: params.filetarget?: "",
         'expression-condition': params.'expression-condition' ?: ""
     ]
 
@@ -29,17 +30,18 @@ def validateInput(Map config) {
         error "source DynamoDB value not provided"
     }
 
-    if (!config.target) {
+    if (!config.target || !config.filetarget) {
         error "target DynamoDB value not provided"
     }
 
-    if (config.target == config.source) {
+    if (config.target && config.filetarget == config.source) {
         error "source DB and Target DB cannot be equal"
     }
-
-    echo "source DynamoDB and Target is provided"
-    checkDBExistence(config.target)
-    checkDBExistence(config.source)
+      checkDBExistence(config.source)
+    if(config.target)
+    { 
+        checkDBExistence(config.target)
+    }
 }
 
 def checkDBExistence(String tableName) {
@@ -88,6 +90,9 @@ def dbcopy(Map config) {
 def do_copy(Map config) {
      def dbregion = "eu-west-1"
     if (config.mode_copy == "scan") {
+        if(config.filetarget){
+           sh """ aws dynamodb scan --table-name ${config.source} --output json > ${config.filetarget} """
+        }else{
         def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion}"
         read_write(scanCmd, config)
     }
@@ -116,54 +121,26 @@ def read_write(String dbCmd, Map config) {
         }
 
         def queryResultRaw = sh(script: queryCmd, returnStdout: true).trim()
-        def data = parseDynamoResponse(queryResultRaw)
-
+        def data = parseDynamoResponse(queryResultRaw)        
         lastKey = data.nextKey
         isFinished = data.done
         def count = data.itemCount
         def batch_size = 25
 
         if (count > 0) {
+            // Utilisation de writeFile pour éviter les problèmes d'escape de caractères dans le shell
             writeFile file: 'raw_data.json', text: queryResultRaw
-
+            
             for (int NB = 0; NB < count; NB += batch_size) {
                 sh """
-                    set -euo pipefail
-
+                    echo '${queryResultRaw}' | jq '.Items[${NB}:${NB + batch_size}]' > query_result.json
                     jq '.Items[${NB}:${NB + batch_size}]' raw_data.json > query_result.json
                     jq '{"${config.target}": [.[] | {PutRequest: {Item: .}} ]}' query_result.json > batch_write.json
-
-                    RESPONSE=\$(aws dynamodb batch-write-item \
-                      --request-items file://batch_write.json \
-                      --region ${dbregion})
-
-                    RETRY_COUNT=0
-                    MAX_RETRIES=3
-
-                    while [ "\$(echo "\$RESPONSE" | jq '.UnprocessedItems | length')" -gt 0 ] \
-                          && [ "\$RETRY_COUNT" -lt "\$MAX_RETRIES" ]; do
-
-                        echo "Tentative de rattrapage n°\$((RETRY_COUNT + 1))..."
-
-                        echo "\$RESPONSE" | jq '.UnprocessedItems' > retry_batch.json
-
-                        sleep \$((2 ** RETRY_COUNT))
-
-                        RESPONSE=\$(aws dynamodb batch-write-item \
-                          --request-items file://retry_batch.json \
-                          --region ${dbregion})
-
-                        RETRY_COUNT=\$((RETRY_COUNT + 1))
-                    done
-
-                    if [ "\$(echo "\$RESPONSE" | jq '.UnprocessedItems | length')" -gt 0 ]; then
-                        echo "ERREUR : certains items n'ont pas pu être insérés après \$MAX_RETRIES tentatives."
-                        exit 1
-                    fi
+                    aws dynamodb batch-write-item --request-items file://batch_write.json --region ${dbregion}
                 """
             }
-
-            sh "rm -f raw_data.json query_result.json batch_write.json retry_batch.json"
+            
+            sh "rm -f raw_data.json query_result.json batch_write.json"
         }
     }
 }
