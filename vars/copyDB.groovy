@@ -30,7 +30,7 @@ def validateInput(Map config) {
         error "source DynamoDB value not provided"
     }
 
-    if (!config.target || !config.filetarget) {
+    if (!config.target && !config.filetarget) {
         error "target DynamoDB value not provided"
     }
 
