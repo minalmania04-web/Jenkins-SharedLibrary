@@ -96,7 +96,7 @@ def do_copy(Map config) {
         def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion}"
         read_write(scanCmd, config)
     }
-
+    }
     if (config.mode_copy == "query") {
         if (!config.'expression-condition') {
             error "key-condition-expression is required for this operation"
