@@ -91,7 +91,7 @@ def do_copy(Map config) {
      def dbregion = "eu-west-1"
     if (config.mode_copy == "scan") {
         if(config.filetarget){
-           sh """ aws dynamodb scan --table-name ${config.source} --output json > ${config.filetarget} """
+           sh """ aws dynamodb scan --table-name ${config.source} --region ${dbregion} --output json > ${config.filetarget} """
         }else{
         def scanCmd = "aws dynamodb scan --table-name ${config.source} --output json --region ${dbregion}"
         read_write(scanCmd, config)
